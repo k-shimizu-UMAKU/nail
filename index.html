@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NAIL STUDIO — Photo Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  :root {
+    --cream: #FAF7F2;
+    --rose: #D4A5A5;
+    --rose-light: #EDD5D5;
+    --rose-deep: #A07070;
+    --gold: #C9A96E;
+    --gold-light: #E8D5B0;
+    --charcoal: #2C2420;
+    --charcoal-mid: #5C4A44;
+    --charcoal-light: #9A8480;
+    --white: #FFFFFF;
+    --panel: #F5F0EB;
+    --border: rgba(180,140,130,0.2);
+    --shadow: rgba(44,36,32,0.08);
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--charcoal);
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 28px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 300;
+    letter-spacing: 0.18em;
+    color: var(--charcoal);
+  }
+  .logo span { color: var(--rose-deep); font-style: italic; }
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+  
+  .btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    padding: 9px 20px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--charcoal-light);
+    color: var(--charcoal);
+  }
+  .btn-outline:hover { border-color: var(--charcoal); background: var(--panel); }
+  .btn-primary {
+    background: var(--charcoal);
+    color: var(--white);
+  }
+  .btn-primary:hover { background: var(--charcoal-mid); }
+  .btn-gold {
+    background: var(--gold);
+    color: var(--white);
+  }
+  .btn-gold:hover { background: var(--rose-deep); }
+
+  /* LAYOUT */
+  .workspace {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    height: calc(100vh - 57px);
+    overflow: hidden;
+  }
+
+  /* CANVAS AREA */
+  .canvas-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #EDE8E2;
+    position: relative;
+    overflow: hidden;
+  }
+  .canvas-area::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+      repeating-linear-gradient(0deg, transparent, transparent 24px, rgba(180,140,130,0.06) 25px),
+      repeating-linear-gradient(90deg, transparent, transparent 24px, rgba(180,140,130,0.06) 25px);
+  }
+
+  .upload-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+  }
+  .upload-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    transition: all 0.3s;
+  }
+  .upload-icon svg { width: 28px; height: 28px; stroke: var(--rose-deep); fill: none; stroke-width: 1.5; }
+  .upload-prompt:hover .upload-icon { 
+    border-color: var(--rose-deep); 
+    transform: scale(1.05);
+    box-shadow: 0 8px 24px var(--shadow);
+  }
+  .upload-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--charcoal-mid);
+    letter-spacing: 0.04em;
+  }
+  .upload-sub { font-size: 12px; color: var(--charcoal-light); letter-spacing: 0.06em; }
+
+  #preview-canvas {
+    max-width: calc(100% - 48px);
+    max-height: calc(100% - 48px);
+    object-fit: contain;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 16px 64px rgba(44,36,32,0.2);
+    display: none;
+  }
+  #file-input { display: none; }
+
+  .format-bar {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 10;
+    background: var(--white);
+    padding: 4px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    display: none;
+  }
+  .format-btn {
+    font-size: 11px;
+    padding: 5px 12px;
+    border: none;
+    background: transparent;
+    color: var(--charcoal-mid);
+    cursor: pointer;
+    border-radius: 2px;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .format-btn.active { background: var(--charcoal); color: var(--white); }
+  .format-btn:hover:not(.active) { background: var(--panel); }
+
+  /* RIGHT PANEL */
+  .right-panel {
+    background: var(--white);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .right-panel::-webkit-scrollbar { width: 4px; }
+  .right-panel::-webkit-scrollbar-thumb { background: var(--rose-light); border-radius: 2px; }
+
+  .panel-section {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-title {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    font-weight: 500;
+    color: var(--charcoal-light);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  /* PRESETS */
+  .preset-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .preset-card {
+    cursor: pointer;
+    border-radius: 3px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    background: var(--panel);
+  }
+  .preset-card:hover { border-color: var(--rose-light); }
+  .preset-card.active { border-color: var(--rose-deep); }
+  .preset-thumb {
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .preset-thumb-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+  .preset-emoji { position: relative; z-index: 1; }
+  .preset-name {
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    text-align: center;
+    padding: 4px 2px 6px;
+    color: var(--charcoal-mid);
+    font-weight: 500;
+  }
+
+  /* SLIDERS */
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .slider-label {
+    font-size: 11px;
+    color: var(--charcoal-mid);
+    width: 72px;
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+  }
+  .slider-wrap { flex: 1; position: relative; }
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(to right, var(--rose-deep) 0%, var(--rose-deep) var(--pct, 50%), var(--border) var(--pct, 50%));
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--white);
+    border: 2px solid var(--rose-deep);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  .slider-val {
+    font-size: 11px;
+    color: var(--charcoal-light);
+    width: 28px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* COMPARE TOGGLE */
+  .compare-area {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 10;
+    display: none;
+  }
+  .compare-btn {
+    background: rgba(255,255,255,0.92);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 6px 14px;
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+    color: var(--charcoal-mid);
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .compare-btn:hover { background: var(--white); color: var(--charcoal); }
+  .compare-btn.comparing { background: var(--charcoal); color: var(--white); border-color: var(--charcoal); }
+
+  /* COLOR PICKER section */
+  .color-grid {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .color-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .color-dot:hover { transform: scale(1.15); }
+  .color-dot.active::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border: 2px solid var(--charcoal);
+    border-radius: 50%;
+  }
+
+  /* Export section */
+  .export-section {
+    padding: 16px 20px;
+    margin-top: auto;
+    background: var(--panel);
+  }
+  .export-quality {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+  .quality-btn {
+    flex: 1;
+    font-size: 11px;
+    padding: 7px 4px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    border-radius: 2px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--charcoal-mid);
+    letter-spacing: 0.04em;
+  }
+  .quality-btn.active { background: var(--charcoal); color: var(--white); border-color: var(--charcoal); }
+  .quality-btn:hover:not(.active) { background: var(--panel); }
+
+  .download-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, var(--rose-deep) 0%, var(--gold) 100%);
+    color: var(--white);
+    border: none;
+    border-radius: 2px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .download-btn:hover { opacity: 0.85; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(160,112,112,0.3); }
+  .download-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .reset-link {
+    display: block;
+    text-align: center;
+    font-size: 11px;
+    color: var(--charcoal-light);
+    margin-top: 10px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .reset-link:hover { color: var(--charcoal-mid); }
+
+  .watermark {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 11px;
+    color: rgba(92,74,68,0.4);
+    letter-spacing: 0.15em;
+    z-index: 2;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  /* Drag over */
+  .canvas-area.dragover { background: #E8E0D8; }
+  .canvas-area.dragover::after {
+    content: '写真をドロップ';
+    position: absolute;
+    inset: 20px;
+    border: 2px dashed var(--rose-deep);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    color: var(--rose-deep);
+    pointer-events: none;
+    z-index: 20;
+  }
+
+  @media (max-width: 768px) {
+    .workspace { grid-template-columns: 1fr; grid-template-rows: 55vh 1fr; }
+    .canvas-area { min-height: 0; }
+    .right-panel { max-height: none; overflow-y: auto; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">NAIL <span>Studio</span></div>
+  <div class="header-actions">
+    <button class="btn btn-outline" onclick="document.getElementById('file-input').click()">写真を開く</button>
+    <button class="btn btn-gold" id="download-header-btn" onclick="exportImage()" disabled>Instagram用に保存</button>
+  </div>
+</header>
+
+<div class="workspace">
+  <!-- CANVAS -->
+  <div class="canvas-area" id="canvas-area" 
+       ondragover="handleDragOver(event)" 
+       ondrop="handleDrop(event)"
+       ondragleave="handleDragLeave(event)">
+    
+    <label class="upload-prompt" id="upload-prompt" for="file-input">
+      <div class="upload-icon">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+      </div>
+      <p class="upload-text">写真をアップロード</p>
+      <p class="upload-sub">クリックまたはドラッグ＆ドロップ · JPG, PNG, HEIC</p>
+    </label>
+    
+    <canvas id="preview-canvas"></canvas>
+    
+    <div class="compare-area" id="compare-area">
+      <button class="compare-btn" id="compare-btn" 
+              onmousedown="startCompare()" onmouseup="stopCompare()"
+              ontouchstart="startCompare()" ontouchend="stopCompare()">
+        BEFORE / AFTER
+      </button>
+    </div>
+
+    <div class="format-bar" id="format-bar">
+      <button class="format-btn active" onclick="setFormat('original', this)">オリジナル</button>
+      <button class="format-btn" onclick="setFormat('1:1', this)">1:1</button>
+      <button class="format-btn" onclick="setFormat('4:5', this)">4:5</button>
+      <button class="format-btn" onclick="setFormat('9:16', this)">9:16</button>
+    </div>
+
+    <p class="watermark" id="watermark" style="display:none">NAIL STUDIO</p>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    
+    <!-- PRESETS -->
+    <div class="panel-section">
+      <p class="section-title">プリセット</p>
+      <div class="preset-grid">
+        <div class="preset-card active" onclick="applyPreset('natural', this)">
+          <div class="preset-thumb" style="background: linear-gradient(135deg,#FAF0E6,#F5E0D0)">
+            <span class="preset-emoji">🌸</span>
+          </div>
+          <p class="preset-name">NATURAL</p>
+        </div>
+        <div class="preset-card" onclick="applyPreset('portrait', this)">
+          <div class="preset-thumb" style="background: linear-gradient(135deg,#EEE8E0,#D8CCC0)">
+            <span class="preset-emoji">✨</span>
+          </div>
+          <p class="preset-name">PORTRAIT</p>
+        </div>
+        <div class="preset-card" onclick="applyPreset('bright', this)">
+          <div class="preset-thumb" style="background: linear-gradient(135deg,#FFF8F0,#FFE8D0)">
+            <span class="preset-emoji">☀️</span>
+          </div>
+          <p class="preset-name">BRIGHT</p>
+        </div>
+        <div class="preset-card" onclick="applyPreset('elegant', this)">
+          <div class="preset-thumb" style="background: linear-gradient(135deg,#E8E0D8,#C8B8B0)">
+            <span class="preset-emoji">🤍</span>
+          </div>
+          <p class="preset-name">ELEGANT</p>
+        </div>
+        <div class="preset-card" onclick="applyPreset('vivid', this)">
+          <div class="preset-thumb" style="background: linear-gradient(135deg,#FFE0E8,#FFB0C8)">
+            <span class="preset-emoji">💅</span>
+          </div>
+          <p class="preset-name">VIVID</p>
+        </div>
+        <div class="preset-card" onclick="applyPreset('moody', this)">
+          <div class="preset-thumb" style="background: linear-gradient(135deg,#D0C8C0,#908880)">
+            <span class="preset-emoji">🌙</span>
+          </div>
+          <p class="preset-name">MOODY</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIGHT -->
+    <div class="panel-section">
+      <p class="section-title">ライト調整</p>
+      <div class="slider-row">
+        <span class="slider-label">明るさ</span>
+        <div class="slider-wrap">
+          <input type="range" id="brightness" min="-100" max="100" value="0" oninput="updateSlider(this,'brightness')">
+        </div>
+        <span class="slider-val" id="brightness-val">0</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">コントラスト</span>
+        <div class="slider-wrap">
+          <input type="range" id="contrast" min="-100" max="100" value="0" oninput="updateSlider(this,'contrast')">
+        </div>
+        <span class="slider-val" id="contrast-val">0</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">ハイライト</span>
+        <div class="slider-wrap">
+          <input type="range" id="highlights" min="-100" max="100" value="0" oninput="updateSlider(this,'highlights')">
+        </div>
+        <span class="slider-val" id="highlights-val">0</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">シャドウ</span>
+        <div class="slider-wrap">
+          <input type="range" id="shadows" min="-100" max="100" value="0" oninput="updateSlider(this,'shadows')">
+        </div>
+        <span class="slider-val" id="shadows-val">0</span>
+      </div>
+    </div>
+
+    <!-- COLOR -->
+    <div class="panel-section">
+      <p class="section-title">カラー調整</p>
+      <div class="slider-row">
+        <span class="slider-label">彩度</span>
+        <div class="slider-wrap">
+          <input type="range" id="saturation" min="-100" max="100" value="0" oninput="updateSlider(this,'saturation')">
+        </div>
+        <span class="slider-val" id="saturation-val">0</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">色温度</span>
+        <div class="slider-wrap">
+          <input type="range" id="temperature" min="-100" max="100" value="0" oninput="updateSlider(this,'temperature')">
+        </div>
+        <span class="slider-val" id="temperature-val">0</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">色かぶり</span>
+        <div class="slider-wrap">
+          <input type="range" id="tint" min="-100" max="100" value="0" oninput="updateSlider(this,'tint')">
+        </div>
+        <span class="slider-val" id="tint-val">0</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">鮮明度</span>
+        <div class="slider-wrap">
+          <input type="range" id="clarity" min="0" max="100" value="0" oninput="updateSlider(this,'clarity')">
+        </div>
+        <span class="slider-val" id="clarity-val">0</span>
+      </div>
+    </div>
+
+    <!-- DSLR EFFECTS -->
+    <div class="panel-section">
+      <p class="section-title">一眼レフ仕上げ</p>
+      <div class="slider-row">
+        <span class="slider-label">シャープネス</span>
+        <div class="slider-wrap">
+          <input type="range" id="sharpness" min="0" max="100" value="0" oninput="updateSlider(this,'sharpness')">
+        </div>
+        <span class="slider-val" id="sharpness-val">0</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">ビネット</span>
+        <div class="slider-wrap">
+          <input type="range" id="vignette" min="0" max="100" value="0" oninput="updateSlider(this,'vignette')">
+        </div>
+        <span class="slider-val" id="vignette-val">0</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">グロー</span>
+        <div class="slider-wrap">
+          <input type="range" id="glow" min="0" max="100" value="0" oninput="updateSlider(this,'glow')">
+        </div>
+        <span class="slider-val" id="glow-val">0</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">肌ツヤ感</span>
+        <div class="slider-wrap">
+          <input type="range" id="skin" min="0" max="100" value="0" oninput="updateSlider(this,'skin')">
+        </div>
+        <span class="slider-val" id="skin-val">0</span>
+      </div>
+    </div>
+
+    <!-- EXPORT -->
+    <div class="export-section">
+      <p class="section-title" style="margin-bottom:10px">書き出し品質</p>
+      <div class="export-quality">
+        <button class="quality-btn" onclick="setQuality(0.8, this)">標準</button>
+        <button class="quality-btn active" onclick="setQuality(0.95, this)">高品質</button>
+        <button class="quality-btn" onclick="setQuality(1.0, this)">最高</button>
+      </div>
+      <button class="download-btn" id="download-btn" onclick="exportImage()" disabled>
+        保存する — Instagram用
+      </button>
+      <span class="reset-link" onclick="resetAll()">すべてリセット</span>
+    </div>
+
+  </div>
+</div>
+
+<input type="file" id="file-input" accept="image/*" onchange="loadImage(this)">
+
+<script>
+let originalImage = null;
+let displayCanvas = document.getElementById('preview-canvas');
+let ctx = displayCanvas.getContext('2d');
+let adjustments = {
+  brightness: 0, contrast: 0, saturation: 0, temperature: 0, tint: 0,
+  highlights: 0, shadows: 0, clarity: 0, sharpness: 0, vignette: 0, glow: 0, skin: 0
+};
+let currentFormat = 'original';
+let exportQuality = 0.95;
+let isComparing = false;
+
+const PRESETS = {
+  natural:  { brightness: 5,  contrast: 5,  saturation: 5,  temperature: 8,  tint: 0,  highlights: -10, shadows: 15, clarity: 15, sharpness: 20, vignette: 10, glow: 5,  skin: 10 },
+  portrait: { brightness: 8,  contrast: 12, saturation: -5, temperature: 12, tint: 0,  highlights: -15, shadows: 20, clarity: 20, sharpness: 30, vignette: 20, glow: 15, skin: 20 },
+  bright:   { brightness: 18, contrast: -5, saturation: 10, temperature: 5,  tint: 0,  highlights: -20, shadows: 25, clarity: 10, sharpness: 15, vignette: 5,  glow: 20, skin: 5  },
+  elegant:  { brightness: 3,  contrast: 18, saturation: -15,temperature: -5, tint: 0,  highlights: -20, shadows: 10, clarity: 25, sharpness: 25, vignette: 30, glow: 8,  skin: 15 },
+  vivid:    { brightness: 5,  contrast: 15, saturation: 30, temperature: 5,  tint: 5,  highlights: -5,  shadows: 10, clarity: 20, sharpness: 25, vignette: 15, glow: 10, skin: 0  },
+  moody:    { brightness: -8, contrast: 25, saturation: -20,temperature: -10,tint: -5, highlights: -30, shadows: 5,  clarity: 30, sharpness: 20, vignette: 40, glow: 0,  skin: 5  }
+};
+
+function loadImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      originalImage = img;
+      displayCanvas.style.display = 'block';
+      document.getElementById('upload-prompt').style.display = 'none';
+      document.getElementById('compare-area').style.display = 'block';
+      document.getElementById('format-bar').style.display = 'flex';
+      document.getElementById('watermark').style.display = 'block';
+      document.getElementById('download-btn').disabled = false;
+      document.getElementById('download-header-btn').disabled = false;
+      renderImage();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function getCanvasDimensions(img) {
+  const maxW = displayCanvas.parentElement.clientWidth - 48;
+  const maxH = displayCanvas.parentElement.clientHeight - 48;
+  let srcW = img.naturalWidth, srcH = img.naturalHeight;
+  
+  if (currentFormat === '1:1') { srcH = srcW; }
+  else if (currentFormat === '4:5') { srcH = srcW * (5/4); }
+  else if (currentFormat === '9:16') { srcH = srcW * (16/9); }
+
+  const scale = Math.min(maxW / srcW, maxH / srcH, 1);
+  return { w: Math.round(srcW * scale), h: Math.round(srcH * scale), srcW, srcH };
+}
+
+function renderImage() {
+  if (!originalImage) return;
+  const { w, h, srcW, srcH } = getCanvasDimensions(originalImage);
+  displayCanvas.width = w;
+  displayCanvas.height = h;
+
+  const iw = originalImage.naturalWidth, ih = originalImage.naturalHeight;
+  let sx = 0, sy = 0, sw = iw, sh = ih;
+
+  if (currentFormat === '1:1') {
+    sw = Math.min(iw, ih); sh = sw;
+    sx = (iw - sw) / 2; sy = (ih - sh) / 2;
+  } else if (currentFormat === '4:5') {
+    sw = iw; sh = iw * (5/4);
+    if (sh > ih) { sh = ih; sw = ih * (4/5); sx = (iw - sw) / 2; }
+    else { sy = (ih - sh) / 2; }
+  } else if (currentFormat === '9:16') {
+    sw = iw; sh = iw * (16/9);
+    if (sh > ih) { sh = ih; sw = ih * (9/16); sx = (iw - sw) / 2; }
+    else { sy = (ih - sh) / 2; }
+  }
+
+  ctx.clearRect(0, 0, w, h);
+  
+  if (isComparing) {
+    ctx.drawImage(originalImage, sx, sy, sw, sh, 0, 0, w, h);
+    return;
+  }
+
+  // Apply CSS filters for real-time preview
+  const bright = 1 + adjustments.brightness / 100;
+  const cont = 1 + adjustments.contrast / 100 * 1.5;
+  const sat = 1 + adjustments.saturation / 100 * 1.5;
+  const hueShift = adjustments.tint * 0.5;
+  
+  ctx.filter = `brightness(${bright}) contrast(${cont}) saturate(${sat}) hue-rotate(${hueShift}deg)`;
+  ctx.drawImage(originalImage, sx, sy, sw, sh, 0, 0, w, h);
+  ctx.filter = 'none';
+
+  // Get pixel data for advanced adjustments
+  let imageData = ctx.getImageData(0, 0, w, h);
+  let data = imageData.data;
+
+  applyAdvancedAdjustments(data, w, h);
+  ctx.putImageData(imageData, 0, 0);
+
+  // Vignette overlay
+  if (adjustments.vignette > 0) {
+    applyVignette(w, h, adjustments.vignette / 100);
+  }
+
+  // Glow / soft glow overlay
+  if (adjustments.glow > 0) {
+    applyGlow(w, h, adjustments.glow / 100);
+  }
+}
+
+function applyAdvancedAdjustments(data, w, h) {
+  const n = data.length;
+  const temp = adjustments.temperature / 100;
+  const highlights = adjustments.highlights / 100;
+  const shadows = adjustments.shadows / 100;
+  const skin = adjustments.skin / 100;
+  const sharpness = adjustments.sharpness / 100;
+
+  for (let i = 0; i < n; i += 4) {
+    let r = data[i], g = data[i+1], b = data[i+2];
+
+    // Temperature (warm/cool without hue shift on all colors)
+    if (temp > 0) {
+      r = Math.min(255, r + temp * 30);
+      b = Math.max(0, b - temp * 20);
+    } else if (temp < 0) {
+      b = Math.min(255, b + (-temp) * 30);
+      r = Math.max(0, r - (-temp) * 15);
+    }
+
+    // Luminance-based highlights/shadows
+    const lum = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+    
+    if (highlights < 0 && lum > 0.6) {
+      const factor = (lum - 0.6) / 0.4;
+      const adj = highlights * factor * 60;
+      r = Math.max(0, Math.min(255, r + adj));
+      g = Math.max(0, Math.min(255, g + adj));
+      b = Math.max(0, Math.min(255, b + adj));
+    } else if (highlights > 0 && lum > 0.6) {
+      const factor = (lum - 0.6) / 0.4;
+      const adj = highlights * factor * 30;
+      r = Math.min(255, r + adj);
+      g = Math.min(255, g + adj);
+      b = Math.min(255, b + adj);
+    }
+    
+    if (shadows > 0 && lum < 0.4) {
+      const factor = (0.4 - lum) / 0.4;
+      const adj = shadows * factor * 60;
+      r = Math.min(255, r + adj);
+      g = Math.min(255, g + adj);
+      b = Math.min(255, b + adj);
+    } else if (shadows < 0 && lum < 0.4) {
+      const factor = (0.4 - lum) / 0.4;
+      const adj = (-shadows) * factor * 40;
+      r = Math.max(0, r - adj);
+      g = Math.max(0, g - adj);
+      b = Math.max(0, b - adj);
+    }
+
+    // Skin tone enhancement (subtle glow on warm skin tones)
+    if (skin > 0) {
+      const isSkin = r > 160 && g > 110 && b > 90 && r > g && g > b && (r - b) > 20;
+      if (isSkin) {
+        r = Math.min(255, r + skin * 15);
+        g = Math.min(255, g + skin * 8);
+      }
+    }
+
+    data[i] = r; data[i+1] = g; data[i+2] = b;
+  }
+}
+
+function applyVignette(w, h, strength) {
+  const cx = w / 2, cy = h / 2;
+  const maxR = Math.sqrt(cx * cx + cy * cy);
+  const grad = ctx.createRadialGradient(cx, cy, maxR * (0.3 + (1 - strength) * 0.4), cx, cy, maxR);
+  grad.addColorStop(0, 'rgba(0,0,0,0)');
+  grad.addColorStop(1, `rgba(0,0,0,${strength * 0.65})`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+}
+
+function applyGlow(w, h, strength) {
+  const cx = w / 2, cy = h / 2;
+  const grad = ctx.createRadialGradient(cx, cy * 0.7, 0, cx, cy, Math.max(w, h) * 0.7);
+  grad.addColorStop(0, `rgba(255,240,230,${strength * 0.22})`);
+  grad.addColorStop(0.5, `rgba(255,235,225,${strength * 0.08})`);
+  grad.addColorStop(1, 'rgba(255,235,225,0)');
+  ctx.globalCompositeOperation = 'screen';
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+function updateSlider(input, key) {
+  const val = parseInt(input.value);
+  adjustments[key] = val;
+  document.getElementById(key + '-val').textContent = val;
+  // Update track gradient
+  const min = parseInt(input.min), max = parseInt(input.max);
+  const pct = ((val - min) / (max - min)) * 100;
+  input.style.setProperty('--pct', pct + '%');
+  renderImage();
+}
+
+function applyPreset(name, card) {
+  document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+  card.classList.add('active');
+  const p = PRESETS[name];
+  Object.assign(adjustments, p);
+  // Update all sliders
+  Object.keys(p).forEach(key => {
+    const el = document.getElementById(key);
+    if (el) {
+      el.value = p[key];
+      const min = parseInt(el.min), max = parseInt(el.max);
+      const pct = ((p[key] - min) / (max - min)) * 100;
+      el.style.setProperty('--pct', pct + '%');
+      document.getElementById(key + '-val').textContent = p[key];
+    }
+  });
+  renderImage();
+}
+
+function setFormat(fmt, btn) {
+  currentFormat = fmt;
+  document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderImage();
+}
+
+function setQuality(q, btn) {
+  exportQuality = q;
+  document.querySelectorAll('.quality-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function startCompare() {
+  isComparing = true;
+  document.getElementById('compare-btn').classList.add('comparing');
+  renderImage();
+}
+function stopCompare() {
+  isComparing = false;
+  document.getElementById('compare-btn').classList.remove('comparing');
+  renderImage();
+}
+
+function exportImage() {
+  if (!originalImage) return;
+  
+  // Render at full resolution
+  const exportCanvas = document.createElement('canvas');
+  const exportCtx = exportCanvas.getContext('2d');
+  
+  const iw = originalImage.naturalWidth, ih = originalImage.naturalHeight;
+  let sx = 0, sy = 0, sw = iw, sh = ih;
+
+  if (currentFormat === '1:1') {
+    sw = Math.min(iw, ih); sh = sw;
+    sx = (iw - sw) / 2; sy = (ih - sh) / 2;
+  } else if (currentFormat === '4:5') {
+    sw = iw; sh = iw * (5/4);
+    if (sh > ih) { sh = ih; sw = ih * (4/5); sx = (iw - sw) / 2; }
+    else { sy = (ih - sh) / 2; }
+  } else if (currentFormat === '9:16') {
+    sw = iw; sh = iw * (16/9);
+    if (sh > ih) { sh = ih; sw = ih * (9/16); sx = (iw - sw) / 2; }
+    else { sy = (ih - sh) / 2; }
+  }
+
+  exportCanvas.width = Math.round(sw);
+  exportCanvas.height = Math.round(sh);
+
+  const bright = 1 + adjustments.brightness / 100;
+  const cont = 1 + adjustments.contrast / 100 * 1.5;
+  const sat = 1 + adjustments.saturation / 100 * 1.5;
+  const hueShift = adjustments.tint * 0.5;
+
+  exportCtx.filter = `brightness(${bright}) contrast(${cont}) saturate(${sat}) hue-rotate(${hueShift}deg)`;
+  exportCtx.drawImage(originalImage, sx, sy, sw, sh, 0, 0, Math.round(sw), Math.round(sh));
+  exportCtx.filter = 'none';
+
+  let imageData = exportCtx.getImageData(0, 0, Math.round(sw), Math.round(sh));
+  applyAdvancedAdjustments(imageData.data, Math.round(sw), Math.round(sh));
+  exportCtx.putImageData(imageData, 0, 0);
+
+  if (adjustments.vignette > 0) {
+    const ew = Math.round(sw), eh = Math.round(sh);
+    const cx = ew/2, cy = eh/2, maxR = Math.sqrt(cx*cx+cy*cy);
+    const grad = exportCtx.createRadialGradient(cx, cy, maxR*(0.3+(1-adjustments.vignette/100)*0.4), cx, cy, maxR);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, `rgba(0,0,0,${adjustments.vignette/100*0.65})`);
+    exportCtx.fillStyle = grad;
+    exportCtx.fillRect(0, 0, ew, eh);
+  }
+
+  if (adjustments.glow > 0) {
+    const ew = Math.round(sw), eh = Math.round(sh);
+    const cx = ew/2, cy = eh*0.35, str = adjustments.glow/100;
+    const grad = exportCtx.createRadialGradient(cx, cy, 0, cx, eh/2, Math.max(ew, eh)*0.7);
+    grad.addColorStop(0, `rgba(255,240,230,${str*0.22})`);
+    grad.addColorStop(0.5, `rgba(255,235,225,${str*0.08})`);
+    grad.addColorStop(1, 'rgba(255,235,225,0)');
+    exportCtx.globalCompositeOperation = 'screen';
+    exportCtx.fillStyle = grad;
+    exportCtx.fillRect(0, 0, ew, eh);
+    exportCtx.globalCompositeOperation = 'source-over';
+  }
+
+  const link = document.createElement('a');
+  link.download = 'nail-studio-instagram.jpg';
+  link.href = exportCanvas.toDataURL('image/jpeg', exportQuality);
+  link.click();
+}
+
+function resetAll() {
+  adjustments = {
+    brightness: 0, contrast: 0, saturation: 0, temperature: 0, tint: 0,
+    highlights: 0, shadows: 0, clarity: 0, sharpness: 0, vignette: 0, glow: 0, skin: 0
+  };
+  document.querySelectorAll('input[type="range"]').forEach(el => {
+    el.value = 0;
+    const min = parseInt(el.min), max = parseInt(el.max);
+    const pct = ((0 - min) / (max - min)) * 100;
+    el.style.setProperty('--pct', pct + '%');
+    document.getElementById(el.id + '-val').textContent = 0;
+  });
+  document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+  document.querySelector('.preset-card').classList.add('active');
+  renderImage();
+}
+
+// Drag and drop
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('canvas-area').classList.add('dragover');
+}
+function handleDragLeave(e) {
+  document.getElementById('canvas-area').classList.remove('dragover');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('canvas-area').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    const input = document.getElementById('file-input');
+    input.files = dt.files;
+    loadImage(input);
+  }
+}
+
+// Init slider track positions
+document.querySelectorAll('input[type="range"]').forEach(el => {
+  const min = parseInt(el.min), max = parseInt(el.max), val = parseInt(el.value);
+  const pct = ((val - min) / (max - min)) * 100;
+  el.style.setProperty('--pct', pct + '%');
+});
+
+window.addEventListener('resize', () => { if (originalImage) renderImage(); });
+</script>
+</body>
+</html>
